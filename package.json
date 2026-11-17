@@ -1,0 +1,17 @@
+{
+  "name": "silviavaelk-site",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "pull-media": "node scripts/pull-media.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.12",
+    "cannon-es": "^0.20.0",
+    "three": "^0.187.0"
+  },
+  "type": "module",
+  "private": true
+}

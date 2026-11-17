@@ -1,0 +1,118 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { getProjects } from '../../lib/projects';
+import { url, mediaUrl } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length] },
+  }));
+}
+
+const { project, next } = Astro.props;
+const { Content } = await render(project);
+const d = project.data;
+const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
+---
+
+<Base title={d.title} description={d.summary || undefined} image={d.cover}>
+  <article>
+    <header class="intro">
+      <h1>{d.title}</h1>
+      {d.year && <p class="muted">{d.year}</p>}
+      <div class="body"><Content /></div>
+      {d.summary && !project.body?.trim().replace(/<!--.*?-->/s, '') && <p>{d.summary}</p>}
+      {d.links.length > 0 && (
+        <ul class="links">
+          {d.links.map((l) => (
+            <li><a href={l.url} target="_blank" rel="noopener">{l.label} ↗</a></li>
+          ))}
+        </ul>
+      )}
+      {d.tags.length > 0 && <ul class="tags">{d.tags.map((t) => <li>{t}</li>)}</ul>}
+    </header>
+
+    <div class="media">
+      {d.media.map((m) => (
+        <figure>
+          {isVideo(m.src) ? (
+            <video src={mediaUrl(m.src)} autoplay muted loop playsinline />
+          ) : (
+            <img src={mediaUrl(m.src)} alt={m.alt} loading="lazy" decoding="async" />
+          )}
+          {m.caption && <figcaption class="muted">{m.caption}</figcaption>}
+        </figure>
+      ))}
+    </div>
+
+    <nav class="next">
+      <a href={url('/work')}>← All work</a>
+      <a href={url(`/work/${next.id}`)}>Next: {next.data.title} →</a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  article {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) 2fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .intro {
+    position: sticky;
+    top: calc(var(--space) * 3);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .intro p,
+  .body :global(p) {
+    margin: 0 0 12px;
+  }
+  .links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .media {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  figure {
+    margin: 0;
+  }
+  figure img,
+  figure video {
+    width: 100%;
+    border-radius: 6px;
+  }
+  figcaption {
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .next {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    text-transform: uppercase;
+  }
+  .next a {
+    text-decoration: none;
+  }
+  @media (max-width: 800px) {
+    article {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .intro {
+      position: static;
+    }
+  }
+</style>

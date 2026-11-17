@@ -1,0 +1,102 @@
+/* Design tokens — change these to restyle the whole site */
+:root {
+  --bg: #fafafa;
+  --fg: #111;
+  --muted: #6b6b6b;
+  --line: #e2e2e2;
+  --accent: #ff66cc;
+  --font: 'IBM Plex Mono', ui-monospace, monospace;
+  --space: clamp(16px, 3vw, 40px);
+  --max: 1280px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Header */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.site-header a {
+  pointer-events: auto;
+  text-decoration: none;
+  font-weight: 500;
+}
+.site-header nav {
+  display: flex;
+  gap: 24px;
+}
+.site-header nav a[aria-current='page'] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+main {
+  padding: calc(var(--space) * 3) var(--space) var(--space);
+  max-width: var(--max);
+  margin: 0 auto;
+}
+body.bare main {
+  padding: 0;
+  max-width: none;
+}
+
+h1 {
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.tags li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
