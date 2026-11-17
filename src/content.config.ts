@@ -48,6 +48,8 @@ const projects = defineCollection({
     summary: z.string().default(''),
     tags: z.array(z.string()).default([]),
     cover: z.string().optional(),
+    // How images are laid out on the project page
+    layout: z.enum(['masonry', 'grid']).default('masonry'),
     media: z.array(media).default([]),
     links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
     draft: z.boolean().default(false),

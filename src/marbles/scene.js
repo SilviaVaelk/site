@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export const MATERIAL_DEFAULTS = {
@@ -248,13 +248,10 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     onSelect(m.item);
   });
 
-  // — Environment, then start
+  // — Environment: a soft, neutral studio light generated in code (no image file)
   const pmrem = new THREE.PMREMGenerator(renderer);
-  new HDRLoader().load(assetBase + 'zebra.hdr', (hdr) => {
-    scene.environment = pmrem.fromEquirectangular(hdr).texture;
-    hdr.dispose();
-    pmrem.dispose();
-  });
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
 
   items.forEach((item) => addMarble(item));
 

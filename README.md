@@ -32,6 +32,7 @@ marble:
     roughness: 0.15
     clearcoat: 1.5
     clearcoatRoughness: 0.05
+layout: masonry     # or "grid" for even, square-cropped tiles
 media:
   - src: "/media/<slug>/01.jpg"
     alt: "What's in the image"
@@ -47,7 +48,8 @@ Pushing to `main` publishes the site automatically (see the Actions tab).
 
 - Inner models: `public/marbles/models/*.glb`
 - Textures: `public/marbles/textures/*`
-- Environment: `public/marbles/zebra.hdr`, normal map `public/marbles/marble-normal.jpg`
+- Normal map (surface detail): `public/marbles/marble-normal.jpg`
+- Reflections come from a neutral studio environment generated in code (`src/marbles/scene.js`)
 
 ## Running it on your computer
 
