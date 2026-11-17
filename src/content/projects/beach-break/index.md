@@ -18,7 +18,6 @@ marble:
     roughness: 0.1
     clearcoat: 1.5
     clearcoatRoughness: 0.1
-layout: grid
 media:
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/0a44b79e-a500-43b2-8286-c385ac7cdf31/386468487_223282700773443_4145918176769139972_n.png"
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/e3e6d8e8-64ed-41e3-b4fd-efa813c55071/371541733_771994054937858_7929928088623484386_n.png"

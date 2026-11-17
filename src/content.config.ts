@@ -49,7 +49,7 @@ const projects = defineCollection({
     tags: z.array(z.string()).default([]),
     cover: z.string().optional(),
     // How images are laid out on the project page
-    layout: z.enum(['masonry', 'grid']).default('masonry'),
+    layout: z.enum(['masonry', 'grid']).default('grid'),
     media: z.array(media).default([]),
     links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
     draft: z.boolean().default(false),

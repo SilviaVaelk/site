@@ -91,7 +91,7 @@ const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
 
   /* Masonry: images keep their shape and stack in columns */
   .media.masonry {
-    columns: 3 280px;
+    columns: 3;
     column-gap: 16px;
   }
   .media.masonry figure {
@@ -99,11 +99,26 @@ const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
     margin-bottom: 16px;
   }
 
-  /* Grid: even tiles, images cropped to squares */
+  /* Grid: 3 columns of even tiles, images cropped to squares */
   .media.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+  }
+  @media (max-width: 600px) {
+    .media.grid {
+      gap: 4px;
+    }
+    .media.grid img,
+    .media.grid video {
+      border-radius: 2px;
+    }
+    .media.masonry {
+      column-gap: 4px;
+    }
+    .media.masonry figure {
+      margin-bottom: 4px;
+    }
   }
   .media.grid img,
   .media.grid video {

@@ -69,6 +69,15 @@ main {
   max-width: var(--max);
   margin: 0 auto;
 }
+body:not(.bare) .site-header {
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+@media (max-width: 600px) {
+  main {
+    padding-top: 88px;
+  }
+}
 body.bare main {
   padding: 0;
   max-width: none;

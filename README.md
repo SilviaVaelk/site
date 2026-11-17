@@ -32,7 +32,7 @@ marble:
     roughness: 0.15
     clearcoat: 1.5
     clearcoatRoughness: 0.05
-layout: masonry     # or "grid" for even, square-cropped tiles
+layout: grid        # 3×3 square tiles (default), or "masonry" to keep image shapes
 media:
   - src: "/media/<slug>/01.jpg"
     alt: "What's in the image"
