@@ -53,19 +53,22 @@ Pushing to `main` publishes the site automatically (see the Actions tab).
 
 ## Marble studio
 
-A private page for tweaking the marbles, lighting and physics with sliders. It only exists while the site runs on your computer and is never published.
+A private page for tweaking the marbles, lighting and physics with sliders, right in the browser:
+**https://silviavaelk.github.io/site/studio** (later: silviavaelk.com/studio).
 
-```sh
-npm run dev
-```
+It isn't linked anywhere, is hidden from search engines, and only opens with a GitHub token that can write to this repo.
 
-Then open http://localhost:4321/site/studio
+**One-time setup: create a token**
+1. github.com → your profile picture → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
+2. Repository access: **Only select repositories** → `site`.
+3. Permissions → Repository permissions → **Contents: Read and write**.
+4. Generate, copy, and paste it into the studio. It stays in that browser until you click **Lock studio**.
 
-- **Environment & light**: reflections (soft studio, gradient, none, or any `.hdr` file you drop into `public/marbles/env/`), reflection strength and rotation, tone mapping, exposure, lights, glow, background.
+**Using it**
+- **Environment & light**: reflections (soft studio, gradient, none, or any `.hdr` uploaded to `public/marbles/env/`), strength, rotation, tone mapping, exposure, lights, glow, background.
 - **Camera & physics**: zoom, gravity, bounce.
 - **Marble**: pick a project (or click a marble) and adjust its look.
-- **Save environment** writes `src/marbles/environment.json`. **Save marble** writes the `marble:` section of each changed project's `index.md`.
-- Then commit and push (e.g. in GitHub Desktop) to publish.
+- **Publish** saves everything you changed as one commit; the live site updates about a minute later.
 
 ## Running it on your computer
 

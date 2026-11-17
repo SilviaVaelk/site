@@ -7,6 +7,7 @@ interface Props {
   description?: string;
   image?: string;
   bare?: boolean; // true = no header padding (used by the marble home page)
+  noindex?: boolean; // hide from search engines
 }
 
 const {
@@ -14,6 +15,7 @@ const {
   description = 'Silvia Välk — product designer and visual explorer. Digital painting, type, branding and creative code.',
   image,
   bare = false,
+  noindex = false,
 } = Astro.props;
 
 const fullTitle = title ? `${title} — Silvia Välk` : 'Silvia Välk';
@@ -35,6 +37,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
