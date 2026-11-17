@@ -51,6 +51,22 @@ Pushing to `main` publishes the site automatically (see the Actions tab).
 - Normal map (surface detail): `public/marbles/marble-normal.jpg`
 - Reflections come from a neutral studio environment generated in code (`src/marbles/scene.js`)
 
+## Marble studio
+
+A private page for tweaking the marbles, lighting and physics with sliders. It only exists while the site runs on your computer and is never published.
+
+```sh
+npm run dev
+```
+
+Then open http://localhost:4321/site/studio
+
+- **Environment & light**: reflections (soft studio, gradient, none, or any `.hdr` file you drop into `public/marbles/env/`), reflection strength and rotation, tone mapping, exposure, lights, glow, background.
+- **Camera & physics**: zoom, gravity, bounce.
+- **Marble**: pick a project (or click a marble) and adjust its look.
+- **Save environment** writes `src/marbles/environment.json`. **Save marble** writes the `marble:` section of each changed project's `index.md`.
+- Then commit and push (e.g. in GitHub Desktop) to publish.
+
 ## Running it on your computer
 
 Needs Node.js (LTS) from nodejs.org.

@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+import DEFAULT_ENV from './environment.json';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export const MATERIAL_DEFAULTS = {
@@ -17,7 +19,14 @@ export const MATERIAL_DEFAULTS = {
   clearcoatRoughness: 0.01,
 };
 
-const ZOOM = 3;
+export { DEFAULT_ENV };
+
+const TONE_MAPPING = {
+  None: THREE.NoToneMapping,
+  ACESFilmic: THREE.ACESFilmicToneMapping,
+  AgX: THREE.AgXToneMapping,
+  Neutral: THREE.NeutralToneMapping,
+};
 const Z_BOUND = 2;
 
 /**
@@ -28,13 +37,14 @@ const Z_BOUND = 2;
  * @param {(item|null) => void} [opts.onHover]
  * @param {(item) => void} [opts.onSelect]
  * @param {boolean} [opts.orbit]  allow rotating the view by dragging
+ * @param {object} [opts.environment]  lighting/physics settings (see environment.json)
  */
-export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}, onSelect = () => {}, orbit = true }) {
+export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}, onSelect = () => {}, orbit = true, environment = DEFAULT_ENV }) {
+  let env = { ...DEFAULT_ENV, ...environment };
   // — Renderer, scene, camera
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
@@ -47,17 +57,19 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   controls.enabled = orbit;
   controls.target.set(0, 1, 0);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
-  dirLight.position.set(5, 10, 5);
-  scene.add(dirLight);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambient);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  scene.add(keyLight);
 
   // — Physics
   const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
   const marbleMat = new CANNON.Material();
   const groundMat = new CANNON.Material();
-  world.addContactMaterial(new CANNON.ContactMaterial(marbleMat, groundMat, { friction: 0.4, restitution: 0.6 }));
-  world.addContactMaterial(new CANNON.ContactMaterial(marbleMat, marbleMat, { friction: 0.3, restitution: 0.6 }));
+  const groundContact = new CANNON.ContactMaterial(marbleMat, groundMat, { friction: 0.4, restitution: 0.6 });
+  const marbleContact = new CANNON.ContactMaterial(marbleMat, marbleMat, { friction: 0.3, restitution: 0.6 });
+  world.addContactMaterial(groundContact);
+  world.addContactMaterial(marbleContact);
 
   const ground = new CANNON.Body({ mass: 0, shape: new CANNON.Plane(), material: groundMat });
   ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
@@ -80,14 +92,15 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
     const aspect = w / h;
-    camera.left = -aspect * ZOOM;
-    camera.right = aspect * ZOOM;
-    camera.top = ZOOM;
-    camera.bottom = -ZOOM;
+    const zoom = env.zoom;
+    camera.left = -aspect * zoom;
+    camera.right = aspect * zoom;
+    camera.top = zoom;
+    camera.bottom = -zoom;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
     // Keep marbles inside the visible area on narrow (phone) screens
-    bound = Math.min(4.5, Math.max(1.4, aspect * ZOOM * 0.85));
+    bound = Math.min(4.5, Math.max(1.4, aspect * zoom * 0.85));
     leftWall.position.set(-bound, 0, 0);
     rightWall.position.set(bound, 0, 0);
   }
@@ -129,18 +142,19 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       color: new THREE.Color(cfg.color ?? '#ffffff'),
       metalness: 0,
       transparent: true,
-      envMapIntensity: 2.5,
       ...MATERIAL_DEFAULTS,
       ...(cfg.material ?? {}),
     });
+    material.normalScale.setScalar(env.normalStrength);
     const size = cfg.size ?? 1;
     const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 64, 64), material);
     sphere.userData.id = m.item.id;
 
     const group = new THREE.Group();
     group.add(sphere);
-    const light = new THREE.PointLight(new THREE.Color(cfg.light ?? '#ff66cc'), 3, 6);
+    const light = new THREE.PointLight(new THREE.Color(cfg.light ?? '#ff66cc'), env.glow, 6);
     group.add(light);
+    group.userData.glow = light;
 
     if (cfg.inner) {
       const token = (m.token = Symbol());
@@ -152,9 +166,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
           model.scale.setScalar((size * 2 * 0.9) / Math.max(dims.x, dims.y, dims.z));
           box.setFromObject(model);
           model.position.sub(box.getCenter(new THREE.Vector3()));
-          model.traverse((c) => {
-            if (c.isMesh) c.material.envMapIntensity = 2.5;
-          });
           group.add(model);
         })
         .catch((e) => console.warn(`Could not load model ${cfg.inner}`, e));
@@ -248,10 +259,72 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     onSelect(m.item);
   });
 
-  // — Environment: a soft, neutral studio light generated in code (no image file)
+  // — Environment & lighting (all driven by `env`, see environment.json)
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
+  const hdrLoader = new HDRLoader();
+  let envKey = null;
+  let envTexture = null;
+
+  function gradientScene(top, bottom) {
+    const s = new THREE.Scene();
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: { top: { value: new THREE.Color(top) }, bottom: { value: new THREE.Color(bottom) } },
+      vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ gl_FragColor = vec4(mix(bottom, top, smoothstep(-0.6, 0.8, vP.y)), 1.0); }',
+    });
+    s.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), mat));
+    return s;
+  }
+
+  function setEnvMap(texture) {
+    if (envTexture) envTexture.dispose();
+    envTexture = texture;
+    scene.environment = texture;
+  }
+
+  function applyEnvMap() {
+    const key = env.env === 'gradient' ? `gradient:${env.gradientTop}:${env.gradientBottom}` : env.env;
+    if (key === envKey) return;
+    envKey = key;
+    if (env.env === 'none') return setEnvMap(null);
+    if (env.env === 'room') return setEnvMap(pmrem.fromScene(new RoomEnvironment(), 0.04).texture);
+    if (env.env === 'gradient') return setEnvMap(pmrem.fromScene(gradientScene(env.gradientTop, env.gradientBottom)).texture);
+    if (env.env.startsWith('hdr:')) {
+      hdrLoader.load(assetBase + 'env/' + env.env.slice(4), (hdr) => {
+        if (envKey !== key) return hdr.dispose();
+        setEnvMap(pmrem.fromEquirectangular(hdr).texture);
+        hdr.dispose();
+      });
+    }
+  }
+
+  function applyEnvironment() {
+    applyEnvMap();
+    scene.environmentIntensity = env.envIntensity;
+    scene.environmentRotation.set(0, THREE.MathUtils.degToRad(env.envRotation), 0);
+    const tm = TONE_MAPPING[env.toneMapping] ?? THREE.ACESFilmicToneMapping;
+    if (renderer.toneMapping !== tm) {
+      renderer.toneMapping = tm;
+      scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+    }
+    renderer.toneMappingExposure = env.exposure;
+    ambient.intensity = env.ambient;
+    ambient.color.set(env.ambientColor);
+    keyLight.intensity = env.keyLight;
+    keyLight.color.set(env.keyColor);
+    const a = THREE.MathUtils.degToRad(env.keyAngle);
+    keyLight.position.set(Math.sin(a) * 7, 10, Math.cos(a) * 7);
+    world.gravity.set(0, -env.gravity, 0);
+    groundContact.restitution = marbleContact.restitution = env.bounce;
+    for (const m of marbles.values()) {
+      m.group.userData.glow.intensity = env.glow;
+      m.sphere.material.normalScale.setScalar(env.normalStrength);
+    }
+    document.documentElement.style.setProperty('--bg', env.background);
+    resize();
+  }
+  applyEnvironment();
 
   items.forEach((item) => addMarble(item));
 
@@ -279,6 +352,25 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   requestAnimationFrame(tick);
 
   return {
+    /** Change lighting/physics settings live (used by the studio). */
+    setEnvironment(next) {
+      env = { ...env, ...next };
+      applyEnvironment();
+    },
+    /** Update a marble's look; colours and material sliders change in place, other changes rebuild it. */
+    patchMarble(item) {
+      const m = marbles.get(item.id);
+      const prev = m?.item.marble;
+      const cfg = item.marble;
+      if (!m || cfg.show === false || prev.size !== cfg.size || prev.texture !== cfg.texture || prev.inner !== cfg.inner) {
+        return this.updateMarble(item);
+      }
+      m.item = item;
+      const mat = m.sphere.material;
+      Object.assign(mat, { ...MATERIAL_DEFAULTS, ...(cfg.material ?? {}) });
+      mat.color.set(cfg.color ?? '#ffffff');
+      m.group.userData.glow.color.set(cfg.light ?? '#ff66cc');
+    },
     /** Replace one marble's look, keeping its position (used by the studio). */
     updateMarble(item) {
       const old = marbles.get(item.id);
@@ -303,6 +395,7 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     },
     dispose() {
       running = false;
+      pmrem.dispose();
       window.removeEventListener('resize', resize);
       for (const id of [...marbles.keys()]) removeMarble(id);
       renderer.dispose();

@@ -1,0 +1,276 @@
+---
+// Marble studio — only available at /studio while running `npm run dev`.
+import fs from 'node:fs';
+import path from 'node:path';
+import Base from '../layouts/Base.astro';
+import { getProjects } from '../lib/projects';
+import { url } from '../lib/url';
+import environment from '../marbles/environment.json';
+
+const list = (dir: string, ext: RegExp) => {
+  try {
+    return fs.readdirSync(path.join(process.cwd(), 'public/marbles', dir)).filter((f) => ext.test(f)).sort();
+  } catch {
+    return [];
+  }
+};
+
+const projects = await getProjects();
+const data = {
+  items: projects.map((p) => ({
+    id: p.id,
+    title: p.data.title,
+    summary: p.data.summary,
+    href: url(`/work/${p.id}`),
+    marble: p.data.marble ?? { show: false, size: 1, color: '#ffffff', light: '#ff66cc', texture: null, inner: null, material: {} },
+  })),
+  textures: list('textures', /\.(png|jpe?g|webp)$/i),
+  models: list('models', /\.glb$/i),
+  hdrs: list('env', /\.hdr$/i),
+  environment,
+  assetBase: url('/marbles/'),
+  saveUrl: url('/__studio/save'),
+};
+---
+
+<Base title="Studio" bare>
+  <canvas id="marbles"></canvas>
+  <div id="pane"></div>
+  <div class="hint">
+    <strong>Studio</strong> · only on your computer · click a marble to edit it · drag to rotate
+    <span id="hover"></span>
+  </div>
+  <div id="toast" role="status"></div>
+  <script is:inline type="application/json" id="studio-data" set:html={JSON.stringify(data)} />
+</Base>
+
+<script>
+  import { Pane } from 'tweakpane';
+  import { createMarbleScene, MATERIAL_DEFAULTS } from '../marbles/scene.js';
+
+  const data = JSON.parse(document.getElementById('studio-data')!.textContent!);
+  const items = new Map<string, any>(data.items.map((i: any) => [i.id, i]));
+  const toast = document.getElementById('toast')!;
+  const hoverLabel = document.getElementById('hover')!;
+  const say = (msg: string, bad = false) => {
+    toast.textContent = msg;
+    toast.className = bad ? 'show bad' : 'show';
+    clearTimeout((say as any).t);
+    (say as any).t = setTimeout(() => (toast.className = ''), 3500);
+  };
+
+  // ---------- Scene
+  const scene = createMarbleScene({
+    canvas: document.getElementById('marbles') as HTMLCanvasElement,
+    items: [...items.values()].filter((i) => i.marble.show),
+    assetBase: data.assetBase,
+    environment: data.environment,
+    onHover: (item) => (hoverLabel.textContent = item ? ` · ${item.title}` : ''),
+    onSelect: (item) => select(item.id),
+  });
+
+  // ---------- Panel
+  const pane = new Pane({ container: document.getElementById('pane')!, title: 'Marble studio' });
+
+  // Environment
+  const env = { ...data.environment };
+  const envFolder = pane.addFolder({ title: 'Environment & light' });
+  const envOptions: Record<string, string> = { 'Studio (soft room)': 'room', Gradient: 'gradient', None: 'none' };
+  for (const f of data.hdrs) envOptions[`HDR: ${f}`] = `hdr:${f}`;
+  const pushEnv = () => scene.setEnvironment(env);
+
+  envFolder.addBinding(env, 'env', { label: 'reflections', options: envOptions });
+  const gTop = envFolder.addBinding(env, 'gradientTop', { label: 'gradient top' });
+  const gBottom = envFolder.addBinding(env, 'gradientBottom', { label: 'gradient bottom' });
+  const syncGradient = () => (gTop.hidden = gBottom.hidden = env.env !== 'gradient');
+  syncGradient();
+  envFolder.addBinding(env, 'envIntensity', { label: 'reflection strength', min: 0, max: 6, step: 0.05 });
+  envFolder.addBinding(env, 'envRotation', { label: 'reflection rotate', min: 0, max: 360, step: 1 });
+  envFolder.addBinding(env, 'background', { label: 'page background' });
+  envFolder.addBinding(env, 'toneMapping', {
+    label: 'tone mapping',
+    options: { ACES: 'ACESFilmic', AgX: 'AgX', Neutral: 'Neutral', None: 'None' },
+  });
+  envFolder.addBinding(env, 'exposure', { min: 0.1, max: 3, step: 0.01 });
+  envFolder.addBinding(env, 'ambient', { label: 'ambient light', min: 0, max: 3, step: 0.01 });
+  envFolder.addBinding(env, 'ambientColor', { label: 'ambient colour' });
+  envFolder.addBinding(env, 'keyLight', { label: 'key light', min: 0, max: 5, step: 0.01 });
+  envFolder.addBinding(env, 'keyColor', { label: 'key colour' });
+  envFolder.addBinding(env, 'keyAngle', { label: 'key angle', min: 0, max: 360, step: 1 });
+  envFolder.addBinding(env, 'glow', { label: 'inner glow', min: 0, max: 15, step: 0.1 });
+  envFolder.addBinding(env, 'normalStrength', { label: 'surface bumps', min: 0, max: 3, step: 0.01 });
+
+  const physics = pane.addFolder({ title: 'Camera & physics', expanded: false });
+  physics.addBinding(env, 'zoom', { label: 'zoom out', min: 1.5, max: 6, step: 0.05 });
+  physics.addBinding(env, 'gravity', { min: 0, max: 30, step: 0.1 });
+  physics.addBinding(env, 'bounce', { min: 0, max: 1, step: 0.01 });
+  physics.addButton({ title: 'Drop marbles again' }).on('click', () => scene.reset());
+
+  envFolder.on('change', () => {
+    syncGradient();
+    pushEnv();
+  });
+  physics.on('change', pushEnv);
+
+  envFolder.addButton({ title: 'Save environment' }).on('click', () => save({ environment: env }));
+  envFolder.addButton({ title: 'Revert to saved' }).on('click', () => {
+    Object.assign(env, data.environment);
+    pane.refresh();
+    pushEnv();
+  });
+
+  // Marble
+  const NONE = '—';
+  const sel = { project: sessionStorage.getItem('studio:selected') ?? data.items[0]?.id };
+  if (!items.has(sel.project)) sel.project = data.items[0]?.id;
+  const m: any = {};
+  const dirty = new Set<string>();
+
+  const toEdit = (marble: any) => ({
+    show: marble.show ?? true,
+    size: marble.size ?? 1,
+    color: marble.color ?? '#ffffff',
+    light: marble.light ?? '#ff66cc',
+    texture: marble.texture ?? NONE,
+    inner: marble.inner ?? NONE,
+    ...MATERIAL_DEFAULTS,
+    ...(marble.material ?? {}),
+  });
+  const fromEdit = () => ({
+    show: m.show,
+    size: m.size,
+    color: m.color,
+    light: m.light,
+    texture: m.texture === NONE ? null : m.texture,
+    inner: m.inner === NONE ? null : m.inner,
+    material: Object.fromEntries(Object.keys(MATERIAL_DEFAULTS).map((k) => [k, m[k]])),
+  });
+
+  Object.assign(m, toEdit(items.get(sel.project).marble));
+
+  const marbleFolder = pane.addFolder({ title: 'Marble' });
+  const projectOptions = Object.fromEntries(data.items.map((i: any) => [i.title, i.id]));
+  marbleFolder.addBinding(sel, 'project', { options: projectOptions }).on('change', () => select(sel.project));
+
+  const fileOptions = (files: string[]) => Object.fromEntries([[NONE, NONE], ...files.map((f) => [f, f])]);
+  const controls = marbleFolder.addFolder({ title: 'Look' });
+  controls.addBinding(m, 'show', { label: 'on home page' });
+  controls.addBinding(m, 'size', { min: 0.2, max: 2, step: 0.01 });
+  controls.addBinding(m, 'color');
+  controls.addBinding(m, 'light', { label: 'glow colour' });
+  controls.addBinding(m, 'texture', { options: fileOptions(data.textures) });
+  controls.addBinding(m, 'inner', { label: 'inside', options: fileOptions(data.models) });
+  controls.addBinding(m, 'transmission', { label: 'glassiness', min: 0, max: 1, step: 0.01 });
+  controls.addBinding(m, 'opacity', { min: 0, max: 1, step: 0.01 });
+  controls.addBinding(m, 'thickness', { min: 0, max: 5, step: 0.05 });
+  controls.addBinding(m, 'roughness', { label: 'frosting', min: 0, max: 1, step: 0.01 });
+  controls.addBinding(m, 'clearcoat', { min: 0, max: 3, step: 0.01 });
+  controls.addBinding(m, 'clearcoatRoughness', { label: 'coat rough', min: 0, max: 1, step: 0.01 });
+
+  let loading = false;
+  controls.on('change', () => {
+    if (loading) return;
+    const item = { ...items.get(sel.project), marble: fromEdit() };
+    items.set(sel.project, item);
+    scene.patchMarble(item);
+    dirty.add(sel.project);
+    updateSaveTitle();
+  });
+
+  marbleFolder.addButton({ title: 'Nudge it' }).on('click', () => scene.nudge(sel.project));
+  const saveBtn = marbleFolder.addButton({ title: 'Save marble' });
+  saveBtn.on('click', () => {
+    if (!dirty.size) return say('No marble changes to save');
+    save({ marbles: [...dirty].map((id) => ({ id, marble: items.get(id).marble })) });
+  });
+  const updateSaveTitle = () => (saveBtn.title = dirty.size > 1 ? `Save ${dirty.size} marbles` : 'Save marble');
+
+  function select(id: string) {
+    sel.project = id;
+    sessionStorage.setItem('studio:selected', id);
+    loading = true;
+    Object.assign(m, toEdit(items.get(id).marble));
+    pane.refresh();
+    loading = false;
+  }
+  select(sel.project);
+
+  // ---------- Saving (writes files in the project folder)
+  async function save(body: object) {
+    try {
+      const res = await fetch(data.saveUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const out = await res.json();
+      if (!out.ok) throw new Error(out.error);
+      if ('marbles' in body) dirty.clear();
+      if ('environment' in body) data.environment = { ...env };
+      updateSaveTitle();
+      say(`Saved ✓ ${out.saved.join(', ')}`);
+    } catch (e: any) {
+      say(`Couldn't save: ${e.message}`, true);
+    }
+  }
+
+  // Warn before leaving with unsaved marble changes
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty.size) e.preventDefault();
+  });
+</script>
+
+<style>
+  #marbles {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    display: block;
+    touch-action: none;
+  }
+  #pane {
+    position: fixed;
+    top: 72px;
+    right: 16px;
+    width: 320px;
+    max-height: calc(100dvh - 88px);
+    overflow-y: auto;
+    z-index: 20;
+  }
+  .hint {
+    position: fixed;
+    left: var(--space);
+    bottom: var(--space);
+    z-index: 5;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hint strong {
+    color: var(--fg);
+    font-weight: 500;
+  }
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    transition: 0.2s;
+    background: var(--fg);
+    color: var(--bg);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 30;
+    pointer-events: none;
+  }
+  #toast:global(.show) {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  #toast:global(.bad) {
+    background: #c0392b;
+  }
+</style>

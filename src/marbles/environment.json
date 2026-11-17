@@ -1,0 +1,20 @@
+{
+  "background": "#fafafa",
+  "env": "room",
+  "envIntensity": 2.5,
+  "envRotation": 0,
+  "gradientTop": "#ffffff",
+  "gradientBottom": "#ffd6ec",
+  "toneMapping": "ACESFilmic",
+  "exposure": 1,
+  "ambient": 0.4,
+  "ambientColor": "#ffffff",
+  "keyLight": 0.7,
+  "keyColor": "#ffffff",
+  "keyAngle": 45,
+  "glow": 3,
+  "normalStrength": 1,
+  "zoom": 3,
+  "gravity": 9.82,
+  "bounce": 0.6
+}
