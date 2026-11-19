@@ -81,28 +81,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   const title = { text: '', alpha: 0, target: 0, layout: null };
   const TITLE_FONT = (size) => `800 ${size}px Inter, system-ui, sans-serif`;
 
-  // — Soft shadows: a blurred dot under each marble (much cheaper than real shadows)
-  const shadowCanvas = document.createElement('canvas');
-  shadowCanvas.width = shadowCanvas.height = 128;
-  {
-    const c = shadowCanvas.getContext('2d');
-    const g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
-    g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(0.35, 'rgba(0,0,0,0.6)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = g;
-    c.fillRect(0, 0, 128, 128);
-  }
-  const shadowMaterial = new THREE.MeshBasicMaterial({
-    map: new THREE.CanvasTexture(shadowCanvas),
-    color: 0x000000,
-    transparent: true,
-    depthWrite: false,
-    toneMapped: false,
-  });
-  const shadowGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const shadowOffset = new THREE.Vector2();
-
   // Largest size at which the (uppercase) name fits, wrapping onto lines
   function layoutTitle(W, H) {
     const words = title.text.toUpperCase().split(/\s+/).filter(Boolean);
@@ -357,9 +335,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     });
     m.body.position.y = r;
     world.addBody(m.body);
-    m.shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-    m.shadow.renderOrder = -1;
-    scene.add(m.shadow);
     m.appearAt = performance.now() + appearDelay;
     m.group.scale.setScalar(appearDelay ? 0.0001 : 1);
     scene.add(m.group);
@@ -371,7 +346,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     const m = marbles.get(id);
     if (!m) return;
     disposeVisual(m);
-    scene.remove(m.shadow);
     world.removeBody(m.body);
     marbles.delete(id);
   }
@@ -513,10 +487,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     keyLight.color.set(env.keyColor);
     const a = THREE.MathUtils.degToRad(env.keyAngle);
     keyLight.position.set(Math.sin(a) * 7, 10, Math.cos(a) * 7);
-    shadowMaterial.opacity = env.shadow;
-    shadowMaterial.visible = env.shadow > 0;
-    // Shadows fall away from the key light
-    shadowOffset.set(-Math.sin(a), -Math.cos(a)).multiplyScalar(env.shadowOffset);
     world.gravity.set(0, -env.gravity, 0);
     marbleContact.restitution = env.bounce;
     for (const m of marbles.values()) {
@@ -580,9 +550,6 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       }
       m.group.position.copy(m.body.position);
       m.group.quaternion.copy(m.body.quaternion);
-      const r = radius(m.item);
-      m.shadow.position.set(m.body.position.x + shadowOffset.x * r, 0.002, m.body.position.z + shadowOffset.y * r);
-      m.shadow.scale.setScalar(Math.max(s, 0.0001) * r * 2 * env.shadowSize);
     }
 
     if (moving) invalidate();
