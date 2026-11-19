@@ -21,7 +21,7 @@ const items = projects
 
   <div class="panel" aria-live="polite">
     <div class="panel-title" data-title>/</div>
-    <div class="panel-text muted" data-text>Click on a marble — or <a href={url('/work')}>see all work</a></div>
+    <div class="panel-text muted" data-text>Click a marble to open it, drag to throw — or <a href={url('/work')}>see all work</a></div>
   </div>
 
   <!-- Same links as plain HTML, for screen readers and search engines -->
@@ -63,6 +63,7 @@ const items = projects
     onSelect(item) {
       window.location.href = item.href;
     },
+    insets: { top: 72, bottom: 96 },
   });
 </script>
 

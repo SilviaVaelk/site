@@ -44,7 +44,7 @@ const data = {
     <canvas id="marbles"></canvas>
     <div id="pane"></div>
     <div class="hint">
-      <strong>Studio</strong> · click a marble to edit it · drag to rotate
+      <strong>Studio</strong> · click a marble to edit it · drag to throw
       <span id="hover"></span>
     </div>
   </div>
@@ -123,6 +123,7 @@ const data = {
       environment: savedEnv,
       onHover: (item) => ($('hover').textContent = item ? ` · ${item.title}` : ''),
       onSelect: (item) => select(item.id),
+      insets: { top: 72, bottom: 48 },
     });
 
     const pane = new Pane({ container: $('pane'), title: 'Marble studio' });
@@ -162,11 +163,10 @@ const data = {
       updatePublish();
     });
 
-    const physics = pane.addFolder({ title: 'Camera & physics', expanded: false });
+    const physics = pane.addFolder({ title: 'View & physics', expanded: false });
     physics.addBinding(env, 'zoom', { label: 'zoom out', min: 1.5, max: 6, step: 0.05 });
-    physics.addBinding(env, 'gravity', { min: 0, max: 30, step: 0.1 });
-    physics.addBinding(env, 'bounce', { min: 0, max: 1, step: 0.01 });
-    physics.addButton({ title: 'Drop marbles again' }).on('click', () => scene.reset());
+    physics.addBinding(env, 'bounce', { label: 'marble bounce', min: 0, max: 1, step: 0.01 });
+    physics.addButton({ title: 'Scatter marbles' }).on('click', () => scene.reset());
 
     const onEnvChange = () => {
       syncGradient();
