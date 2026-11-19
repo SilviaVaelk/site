@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { getProjects } from '../lib/projects';
 import { url } from '../lib/url';
+import WorkGrid from '../components/WorkGrid.astro';
 
 // Every project with `marble.show: true` becomes a marble.
 const projects = await getProjects();
@@ -27,6 +28,11 @@ const items = projects
   <div class="visually-hidden" aria-live="polite" data-title></div>
   <canvas id="marbles" aria-hidden="true"></canvas>
 
+  <!-- Small screens get the Work grid instead of the marbles (three.js isn't even downloaded) -->
+  <section class="mobile-work">
+    <WorkGrid />
+  </section>
+
   <!-- Same links as plain HTML, for screen readers and search engines -->
   <ul class="visually-hidden">
     {items.map((i) => <li><a href={i.href}>{i.title}</a></li>)}
@@ -37,25 +43,34 @@ const items = projects
 </Base>
 
 <script>
-  import { createMarbleScene } from '../marbles/scene.js';
-
   const items = JSON.parse(document.getElementById('marble-data')!.textContent!);
   const assetBase = JSON.parse(document.getElementById('marble-base')!.textContent!);
   const announce = document.querySelector<HTMLElement>('[data-title]')!;
 
-  const scene = createMarbleScene({
-    canvas: document.getElementById('marbles') as HTMLCanvasElement,
-    items,
-    assetBase,
-    onHover(item) {
-      scene.setTitle(item ? item.title : null);
-      announce.textContent = item ? item.title : '';
-    },
-    onSelect(item) {
-      window.location.href = item.href;
-    },
-    insets: { top: 72, bottom: 24 },
-  });
+  // Keep in sync with the 700px breakpoint in the CSS below
+  const wide = matchMedia('(min-width: 701px)');
+  let started = false;
+
+  async function start() {
+    if (started || !wide.matches) return;
+    started = true;
+    const { createMarbleScene } = await import('../marbles/scene.js');
+    const scene = createMarbleScene({
+      canvas: document.getElementById('marbles') as HTMLCanvasElement,
+      items,
+      assetBase,
+      onHover(item) {
+        scene.setTitle(item ? item.title : null);
+        announce.textContent = item ? item.title : '';
+      },
+      onSelect(item) {
+        window.location.href = item.href;
+      },
+      insets: { top: 72, bottom: 24 },
+    });
+  }
+  start();
+  wide.addEventListener('change', start);
 </script>
 
 <style>
@@ -66,6 +81,18 @@ const items = projects
     height: 100dvh;
     display: block;
     touch-action: none;
+  }
+  .mobile-work {
+    display: none;
+    padding: 88px var(--space) var(--space);
+  }
+  @media (max-width: 700px) {
+    #marbles {
+      display: none;
+    }
+    .mobile-work {
+      display: block;
+    }
   }
   .visually-hidden {
     position: absolute;

@@ -66,8 +66,12 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   // It's part of the 3D scene (not HTML), so the glass marbles refract it.
   const backdropCanvas = document.createElement('canvas');
   const bctx = backdropCanvas.getContext('2d');
-  const backdropTex = new THREE.CanvasTexture(backdropCanvas);
-  backdropTex.colorSpace = THREE.SRGBColorSpace;
+  const makeBackdropTex = () => {
+    const t = new THREE.CanvasTexture(backdropCanvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  let backdropTex = makeBackdropTex();
   const backdrop = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
     new THREE.MeshBasicMaterial({ map: backdropTex, toneMapped: false }),
@@ -111,6 +115,10 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       backdropCanvas.width = W;
       backdropCanvas.height = H;
       title.layout = null;
+      // A GPU texture can't change size once uploaded (it would stretch), so make a new one
+      backdropTex.dispose();
+      backdropTex = makeBackdropTex();
+      backdrop.material.map = backdropTex;
     }
     bctx.globalAlpha = 1;
     bctx.fillStyle = env.background;
@@ -497,7 +505,9 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   });
   resize(); // fit the view now that we know the marbles' sizes
   applyEnvironment();
-  window.addEventListener('resize', resize);
+  // Watch the canvas itself (also catches mobile address-bar changes)
+  const resizeObserver = new ResizeObserver(() => canvas.clientWidth && resize());
+  resizeObserver.observe(canvas);
 
   // — Loop
   let running = true;
@@ -609,7 +619,7 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
     dispose() {
       running = false;
       pmrem.dispose();
-      window.removeEventListener('resize', resize);
+      resizeObserver.disconnect();
       for (const id of [...marbles.keys()]) removeMarble(id);
       renderer.dispose();
     },
