@@ -16,5 +16,8 @@
   "normalStrength": 2.18,
   "zoom": 3,
   "gravity": 9.82,
-  "bounce": 0.6
+  "bounce": 0.6,
+  "shadow": 0.3,
+  "shadowSize": 1.25,
+  "shadowOffset": 0.15
 }

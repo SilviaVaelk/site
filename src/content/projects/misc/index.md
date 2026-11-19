@@ -9,6 +9,7 @@ children:
   - archives
   - you-are-here-now
   - beach-break
+  - murdja-typeface
 marble:
   show: true
   size: 0.57

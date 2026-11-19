@@ -160,6 +160,9 @@ const data = {
     envFolder.addBinding(env, 'keyColor', { label: 'key colour' });
     envFolder.addBinding(env, 'keyAngle', { label: 'key angle', min: 0, max: 360, step: 1 });
     envFolder.addBinding(env, 'glow', { label: 'inner glow', min: 0, max: 15, step: 0.1 });
+    envFolder.addBinding(env, 'shadow', { label: 'shadow strength', min: 0, max: 1, step: 0.01 });
+    envFolder.addBinding(env, 'shadowSize', { label: 'shadow size', min: 0.5, max: 2.5, step: 0.01 });
+    envFolder.addBinding(env, 'shadowOffset', { label: 'shadow offset', min: 0, max: 1, step: 0.01 });
     envFolder.addBinding(env, 'normalStrength', { label: 'surface bumps', min: 0, max: 3, step: 0.01 });
     envFolder.addButton({ title: 'Revert to saved' }).on('click', () => {
       Object.assign(env, savedEnv);
