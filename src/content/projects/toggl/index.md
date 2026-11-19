@@ -18,4 +18,7 @@ marble:
     clearcoatRoughness: 0.25
 ---
 
-<!-- Write about this project here. -->
+Product designer  
+2016–2023
+
+[Work updated soon]
