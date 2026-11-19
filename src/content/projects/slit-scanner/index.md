@@ -10,18 +10,18 @@ links:
     url: "https://silviavaelk.github.io/slit-scanner/"
 marble:
   show: true
-  size: 0.6
-  color: "#ff99cc"
+  size: 0.38
+  color: "#ffffff"
   light: "#ff66cc"
-  texture: "spiral-abstract.png"
+  texture: spiral-bw.png
   inner: null
   material:
-    transmission: 0.1
-    opacity: 1.0
-    thickness: 0.5
-    roughness: 0.1
-    clearcoat: 1.5
-    clearcoatRoughness: 0.1
+    transmission: 0.66
+    opacity: 1
+    thickness: 3.2
+    roughness: 0
+    clearcoat: 0
+    clearcoatRoughness: 1
 media:
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/1747392621425-Z6DKCLUKVJAB3V3QJGDH/Screenshot+2025-05-01+at+14.20.22+1.png"
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/1747392699973-A494LB8NHFCD9MOOF1VO/Frame+1073713569%402x.png"

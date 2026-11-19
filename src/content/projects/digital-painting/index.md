@@ -9,18 +9,18 @@ links:
     url: "https://silviavaelk.github.io/googly-eye-app/"
 marble:
   show: true
-  size: 1
-  color: "#d9d9ff"
+  size: 0.42
+  color: "#ff3a86"
   light: "#ff66cc"
   texture: null
-  inner: "inner-model.glb"
+  inner: inner-model.glb
   material:
-    transmission: 0.9
-    opacity: 0.85
-    thickness: 2.0
-    roughness: 0.1
-    clearcoat: 2.0
-    clearcoatRoughness: 0.1
+    transmission: 1
+    opacity: 1
+    thickness: 1.3
+    roughness: 0.41
+    clearcoat: 0.82
+    clearcoatRoughness: 1
 media:
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/0c2f0966-245b-4c4d-a219-3db7d589fc60/Untitled_Artwork+10.JPG"
   - src: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/bb58f796-7beb-4231-8efe-8944f7852210/frank.jpg"
