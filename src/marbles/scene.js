@@ -62,10 +62,85 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   camera.up.set(0, 0, -1); // screen "up" = away from you on the table
   camera.lookAt(0, 0, 0);
 
+  // — Backdrop: the table surface, with the hovered project's name painted on it.
+  // It's part of the 3D scene (not HTML), so the glass marbles refract it.
+  const backdropCanvas = document.createElement('canvas');
+  const bctx = backdropCanvas.getContext('2d');
+  const backdropTex = new THREE.CanvasTexture(backdropCanvas);
+  backdropTex.colorSpace = THREE.SRGBColorSpace;
+  const backdrop = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ map: backdropTex, toneMapped: false }),
+  );
+  backdrop.rotation.x = -Math.PI / 2;
+  backdrop.position.y = -0.01;
+  const title = { text: '', alpha: 0, target: 0, layout: null };
+  const TITLE_FONT = (size) => `800 ${size}px Inter, system-ui, sans-serif`;
+
+  // Largest size at which the (uppercase) name fits, wrapping onto lines
+  function layoutTitle(W, H) {
+    const words = title.text.toUpperCase().split(/\s+/).filter(Boolean);
+    const maxW = W * 0.94;
+    const maxH = H * 0.8;
+    let size = Math.min(H * 0.5, W * 0.3);
+    for (let i = 0; i < 50; i++) {
+      bctx.font = TITLE_FONT(size);
+      bctx.letterSpacing = `${-0.03 * size}px`;
+      const lines = [];
+      let line = '';
+      for (const w of words) {
+        const test = line ? `${line} ${w}` : w;
+        if (line && bctx.measureText(test).width > maxW) {
+          lines.push(line);
+          line = w;
+        } else line = test;
+      }
+      if (line) lines.push(line);
+      const widest = Math.max(...lines.map((l) => bctx.measureText(l).width));
+      if (widest <= maxW && lines.length * size * 0.86 <= maxH) return { size, lines };
+      size *= 0.92;
+    }
+    return { size, lines: [title.text.toUpperCase()] };
+  }
+
+  function drawBackdrop() {
+    const ratio = Math.min(window.devicePixelRatio, 1.5);
+    const W = Math.round((canvas.clientWidth || window.innerWidth) * ratio);
+    const H = Math.round((canvas.clientHeight || window.innerHeight) * ratio);
+    if (backdropCanvas.width !== W || backdropCanvas.height !== H) {
+      backdropCanvas.width = W;
+      backdropCanvas.height = H;
+      title.layout = null;
+    }
+    bctx.globalAlpha = 1;
+    bctx.fillStyle = env.background;
+    bctx.fillRect(0, 0, W, H);
+    if (title.text && title.alpha > 0) {
+      title.layout ??= layoutTitle(W, H);
+      const { size, lines } = title.layout;
+      bctx.globalAlpha = title.alpha;
+      bctx.fillStyle = '#000';
+      bctx.font = TITLE_FONT(size);
+      bctx.letterSpacing = `${-0.03 * size}px`;
+      bctx.textAlign = 'center';
+      bctx.textBaseline = 'middle';
+      const lh = size * 0.86;
+      lines.forEach((l, i) => bctx.fillText(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * lh + size * 0.04));
+    }
+    backdropTex.needsUpdate = true;
+    invalidate();
+  }
+  // Redraw once the Inter font has arrived
+  document.fonts?.load(TITLE_FONT(100)).then(() => {
+    title.layout = null;
+    drawBackdrop();
+  });
+
   const ambient = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambient);
   const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
   scene.add(keyLight);
+  scene.add(backdrop);
 
   // — Physics: a flat table with four walls at the edges of the screen
   const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
@@ -133,7 +208,8 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       p.z = THREE.MathUtils.clamp(p.z, bounds.far + r, bounds.near - r);
       m.body.wakeUp();
     }
-    invalidate();
+    backdrop.scale.set(camera.right - camera.left, camera.top - camera.bottom, 1);
+    drawBackdrop();
   }
 
   // — Shared loaders & caches
@@ -443,6 +519,13 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       b.wakeUp();
     }
 
+    // Fade the name in/out
+    if (title.alpha !== title.target) {
+      const step = dt / 0.15;
+      title.alpha = title.target > title.alpha ? Math.min(1, title.alpha + step) : Math.max(0, title.alpha - step);
+      drawBackdrop();
+    }
+
     let moving = false;
     for (const m of marbles.values()) if (m.body.sleepState !== CANNON.Body.SLEEPING) moving = true;
     if (moving) world.step(1 / 60, dt, 3);
@@ -505,6 +588,18 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
         m.body.position.copy(freeSpot(radius(m.item), m));
         drift(m.body);
       }
+    },
+    /** Show a project name on the table behind the marbles (null hides it). */
+    setTitle(text) {
+      if (text) {
+        if (text !== title.text) {
+          title.text = text;
+          title.layout = null;
+          title.alpha = 0;
+        }
+        title.target = 1;
+      } else title.target = 0;
+      invalidate();
     },
     /** Give one marble a little push. */
     nudge(id) {

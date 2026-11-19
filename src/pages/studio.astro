@@ -32,6 +32,9 @@ const data = {
 ---
 
 <Base title="Studio" bare noindex>
+  <Fragment slot="head">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap" rel="stylesheet" />
+  </Fragment>
   <form id="unlock" class="unlock">
     <p><strong>Marble studio</strong></p>
     <p class="muted">Paste your GitHub token to open the studio. It's kept in this browser only.</p>
@@ -121,7 +124,10 @@ const data = {
       items: [...items.values()].filter((i) => i.marble.show),
       assetBase: data.assetBase,
       environment: savedEnv,
-      onHover: (item) => ($('hover').textContent = item ? ` · ${item.title}` : ''),
+      onHover: (item) => {
+        $('hover').textContent = item ? ` · ${item.title}` : '';
+        scene.setTitle(item ? item.title : null);
+      },
       onSelect: (item) => select(item.id),
       insets: { top: 72, bottom: 48 },
     });

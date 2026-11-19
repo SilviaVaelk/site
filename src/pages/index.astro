@@ -23,8 +23,8 @@ const items = projects
     />
   </Fragment>
 
-  <!-- Project name, huge, behind the marbles -->
-  <div class="bg-title" aria-live="polite"><span data-title></span></div>
+  <!-- The big project name is painted inside the 3D scene; this is for screen readers -->
+  <div class="visually-hidden" aria-live="polite" data-title></div>
   <canvas id="marbles" aria-hidden="true"></canvas>
 
   <!-- Same links as plain HTML, for screen readers and search engines -->
@@ -41,32 +41,15 @@ const items = projects
 
   const items = JSON.parse(document.getElementById('marble-data')!.textContent!);
   const assetBase = JSON.parse(document.getElementById('marble-base')!.textContent!);
-  const box = document.querySelector<HTMLElement>('.bg-title')!;
-  const title = document.querySelector<HTMLElement>('[data-title]')!;
+  const announce = document.querySelector<HTMLElement>('[data-title]')!;
 
-  // Make the name as big as fits the screen
-  function fit() {
-    if (!title.textContent) return;
-    const maxH = window.innerHeight * 0.8;
-    let size = Math.min(window.innerHeight * 0.5, window.innerWidth * 0.3);
-    title.style.fontSize = `${size}px`;
-    for (let i = 0; i < 40 && (title.scrollWidth > title.clientWidth + 1 || title.offsetHeight > maxH); i++) {
-      size *= 0.92;
-      title.style.fontSize = `${size}px`;
-    }
-  }
-  window.addEventListener('resize', fit);
-  document.fonts?.ready.then(fit);
-
-  createMarbleScene({
+  const scene = createMarbleScene({
     canvas: document.getElementById('marbles') as HTMLCanvasElement,
     items,
     assetBase,
     onHover(item) {
-      if (!item) return box.classList.remove('show');
-      title.textContent = item.title;
-      fit();
-      box.classList.add('show');
+      scene.setTitle(item ? item.title : null);
+      announce.textContent = item ? item.title : '';
     },
     onSelect(item) {
       window.location.href = item.href;
@@ -76,36 +59,9 @@ const items = projects
 </script>
 
 <style>
-  .bg-title {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    display: grid;
-    place-items: center;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-  .bg-title:global(.show) {
-    opacity: 1;
-  }
-  .bg-title span {
-    display: block;
-    max-width: 94vw;
-    font-family: 'Inter', system-ui, sans-serif;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #000;
-    text-align: center;
-    line-height: 0.86;
-    letter-spacing: -0.03em;
-    text-wrap: balance;
-    overflow-wrap: normal;
-  }
   #marbles {
     position: fixed;
     inset: 0;
-    z-index: 1;
     width: 100vw;
     height: 100dvh;
     display: block;
