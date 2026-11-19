@@ -1,0 +1,189 @@
+---
+// Click any image/video inside an element with [data-lightbox] to view it large.
+// Arrow keys / buttons / swipe to move, Esc or click outside to close.
+---
+
+<dialog class="lightbox" aria-label="Image viewer">
+  <div class="stage"></div>
+  <p class="caption"></p>
+  <span class="count"></span>
+  <button class="close" aria-label="Close">×</button>
+  <button class="prev" aria-label="Previous image">←</button>
+  <button class="next" aria-label="Next image">→</button>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('dialog.lightbox')!;
+  const stage = dialog.querySelector<HTMLElement>('.stage')!;
+  const caption = dialog.querySelector<HTMLElement>('.caption')!;
+  const count = dialog.querySelector<HTMLElement>('.count')!;
+  const figures = [...document.querySelectorAll<HTMLElement>('[data-lightbox] figure')];
+  let index = 0;
+
+  const mediaOf = (fig: HTMLElement) => fig.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+
+  function show(i: number) {
+    index = (i + figures.length) % figures.length;
+    const fig = figures[index];
+    const src = mediaOf(fig)!;
+    let el: HTMLElement;
+    if (src instanceof HTMLVideoElement) {
+      const v = document.createElement('video');
+      Object.assign(v, { src: src.currentSrc || src.src, autoplay: true, muted: true, loop: true, playsInline: true, controls: true });
+      el = v;
+    } else {
+      const img = document.createElement('img');
+      img.src = src.currentSrc || src.src;
+      img.alt = src.alt;
+      el = img;
+    }
+    stage.replaceChildren(el);
+    caption.textContent = fig.querySelector('figcaption')?.textContent ?? '';
+    count.textContent = `${index + 1} / ${figures.length}`;
+    // Warm up the neighbours so next/back feel instant
+    for (const n of [index + 1, index - 1]) {
+      const m = mediaOf(figures[(n + figures.length) % figures.length]);
+      if (m instanceof HTMLImageElement) new Image().src = m.currentSrc || m.src;
+    }
+  }
+
+  figures.forEach((fig, i) => {
+    fig.classList.add('zoomable');
+    fig.tabIndex = 0;
+    const open = () => {
+      show(i);
+      dialog.showModal();
+    };
+    fig.addEventListener('click', open);
+    fig.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()));
+  });
+
+  dialog.querySelector('.prev')!.addEventListener('click', () => show(index - 1));
+  dialog.querySelector('.next')!.addEventListener('click', () => show(index + 1));
+  dialog.querySelector('.close')!.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') show(index + 1);
+    if (e.key === 'ArrowLeft') show(index - 1);
+  });
+  // Click on the dark background closes
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog || e.target === stage) dialog.close();
+  });
+  dialog.addEventListener('close', () => stage.replaceChildren());
+
+  // Swipe on touch screens
+  let startX: number | null = null;
+  dialog.addEventListener('touchstart', (e) => (startX = e.touches[0].clientX), { passive: true });
+  dialog.addEventListener('touchend', (e) => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+    startX = null;
+  });
+
+  if (figures.length < 2) dialog.querySelectorAll<HTMLElement>('.prev, .next, .count').forEach((b) => (b.hidden = true));
+</script>
+
+<style>
+  :global(.zoomable) {
+    cursor: zoom-in;
+  }
+  .lightbox {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(10, 10, 10, 0.97);
+    color: #fff;
+    font-family: var(--font);
+  }
+  .lightbox::backdrop {
+    background: transparent;
+  }
+  .lightbox[open] {
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+  .stage {
+    display: grid;
+    place-items: center;
+    padding: 56px 72px 8px;
+    min-height: 0;
+  }
+  .stage :global(img),
+  .stage :global(video) {
+    max-width: calc(100vw - 144px);
+    max-height: calc(100dvh - 120px);
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .caption {
+    margin: 0;
+    padding: 8px 72px 20px;
+    text-align: center;
+    font-size: 12px;
+    min-height: 1em;
+    opacity: 0.8;
+  }
+  .count {
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  button {
+    position: absolute;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    font-size: 28px;
+    line-height: 1;
+    padding: 12px 16px;
+    cursor: pointer;
+    opacity: 0.75;
+  }
+  button:hover,
+  button:focus-visible {
+    opacity: 1;
+  }
+  .close {
+    top: 8px;
+    right: 12px;
+    font-size: 34px;
+  }
+  .prev,
+  .next {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .prev {
+    left: 8px;
+  }
+  .next {
+    right: 8px;
+  }
+  @media (max-width: 600px) {
+    .stage {
+      padding: 56px 8px 8px;
+    }
+    .stage :global(img),
+    .stage :global(video) {
+      max-width: calc(100vw - 16px);
+      max-height: calc(100dvh - 150px);
+    }
+    .caption {
+      padding: 8px 16px 20px;
+    }
+    .prev,
+    .next {
+      top: auto;
+      bottom: 8px;
+      transform: none;
+    }
+  }
+</style>
