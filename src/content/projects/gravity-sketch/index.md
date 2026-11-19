@@ -4,18 +4,18 @@ order: 1
 summary: ""
 marble:
   show: true
-  size: 1
-  color: "#e8e8ff"
-  light: "#8899ff"
+  size: 1.39
+  color: "#5651fb"
+  light: "#2948ff"
   texture: null
-  inner: inner-model-1.glb
+  inner: inner-model-5.glb
   material:
     transmission: 1
     opacity: 1
-    thickness: 1
-    roughness: 0.05
-    clearcoat: 1.5
-    clearcoatRoughness: 0.05
+    thickness: 1.85
+    roughness: 0
+    clearcoat: 0
+    clearcoatRoughness: 0.53
 ---
 
 <!-- Write about this project here. -->
