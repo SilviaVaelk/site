@@ -3,7 +3,8 @@ import Base from '../../layouts/Base.astro';
 import { getProjects } from '../../lib/projects';
 import { url, mediaUrl } from '../../lib/url';
 
-const projects = await getProjects();
+// Collections (like Misc.) and projects without any images yet are left out
+const projects = (await getProjects()).filter((p) => !p.data.children.length && (p.data.cover || p.data.media.length));
 ---
 
 <Base title="Work">

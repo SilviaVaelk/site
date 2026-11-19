@@ -1,7 +1,7 @@
 ---
 title: "Slit-scanner"
 year: 2025
-order: 90
+order: 5
 summary: "Experimental tool to play around with time and motion distortion."
 tags: ["code", "tool", "motion"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/1747392621425-Z6DKCLUKVJAB3V3QJGDH/Screenshot+2025-05-01+at+14.20.22+1.png"

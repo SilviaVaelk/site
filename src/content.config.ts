@@ -48,6 +48,8 @@ const projects = defineCollection({
     summary: z.string().default(''),
     tags: z.array(z.string()).default([]),
     cover: z.string().optional(),
+    // Other projects shown as cards on this page (folder names), e.g. for "Misc."
+    children: z.array(z.string()).default([]),
     // How images are laid out on the project page
     layout: z.enum(['masonry', 'grid']).default('grid'),
     media: z.array(media).default([]),

@@ -5,7 +5,7 @@ summary: "Exploring visuals and motion through trial and error."
 tags: ["motion", "3D", "code"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/1764351014203-NENGWLGPC2GCAJB1MLDF/ezgif-26e26623f49ae8b9.gif"
 marble:
-  show: true
+  show: false
   size: 1.2
   color: "#ffffff"
   light: "#ff66cc"

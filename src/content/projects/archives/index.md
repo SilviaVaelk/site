@@ -5,7 +5,7 @@ summary: "Older work: branding, packaging, posters and illustration."
 tags: ["branding", "illustration", "print"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/13343daa-eae5-4920-b4a8-4fb93f1c3339/grabtheflower_bw.png"
 marble:
-  show: true
+  show: false
   size: 0.8
   color: "#f2e8d5"
   light: "#ffcc66"

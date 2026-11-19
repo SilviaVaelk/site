@@ -5,7 +5,7 @@ summary: "Graphics and apparel."
 tags: ["branding", "apparel"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/0a44b79e-a500-43b2-8286-c385ac7cdf31/386468487_223282700773443_4145918176769139972_n.png"
 marble:
-  show: true
+  show: false
   size: 0.7
   color: "#ffd27a"
   light: "#ff9933"

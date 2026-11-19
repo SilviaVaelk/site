@@ -5,7 +5,7 @@ summary: "Brand identity: logo, visual language, guidelines and social templates
 tags: ["branding"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/8c887092-d60d-43ee-94dd-c361a0a644cf/Instagram+story+-+1%402x.png"
 marble:
-  show: true
+  show: false
   size: 0.85
   color: "#b8f0d8"
   light: "#66ffcc"

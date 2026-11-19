@@ -8,7 +8,7 @@ links:
   - label: "Download on DaFont"
     url: "https://www.dafont.com/murdja.font"
 marble:
-  show: true
+  show: false
   size: 0.9
   color: "#222222"
   light: "#ffffff"

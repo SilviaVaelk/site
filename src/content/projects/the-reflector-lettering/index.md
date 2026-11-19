@@ -8,7 +8,7 @@ links:
   - label: "The Reflector by Sander Välk"
     url: "http://sandervalk.design/into-the-great-wide-open/"
 marble:
-  show: true
+  show: false
   size: 0.75
   color: "#c99a6b"
   light: "#ffaa66"

@@ -8,11 +8,15 @@ export async function getStaticPaths() {
   const projects = await getProjects();
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, next: projects[(i + 1) % projects.length] },
+    props: {
+      project,
+      next: projects[(i + 1) % projects.length],
+      children: project.data.children.map((id) => projects.find((p) => p.id === id)).filter(Boolean),
+    },
   }));
 }
 
-const { project, next } = Astro.props;
+const { project, next, children } = Astro.props;
 const { Content } = await render(project);
 const d = project.data;
 const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
@@ -34,6 +38,20 @@ const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
       )}
       {d.tags.length > 0 && <ul class="tags">{d.tags.map((t) => <li>{t}</li>)}</ul>}
     </header>
+
+    {children.length > 0 && (
+      <ul class="children">
+        {children.map((c) => (
+          <li>
+            <a href={url(`/work/${c!.id}`)}>
+              <div class="thumb">{c!.data.cover && <img src={mediaUrl(c!.data.cover)} alt="" loading="lazy" />}</div>
+              <span class="child-title">{c!.data.title}</span>
+              {c!.data.summary && <span class="muted child-summary">{c!.data.summary}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
 
     <div class:list={['media', d.layout]}>
       {d.media.map((m) => (
@@ -126,6 +144,51 @@ const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
     object-fit: cover;
   }
 
+  .children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px 16px;
+  }
+  .children a {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+  }
+  .thumb {
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--line);
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .children a:hover .thumb img {
+    transform: scale(1.03);
+  }
+  .child-title {
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .child-summary {
+    font-size: 13px;
+  }
+  @media (max-width: 600px) {
+    .children {
+      gap: 20px 6px;
+    }
+    .child-summary {
+      display: none;
+    }
+  }
   .next {
     display: flex;
     justify-content: space-between;

@@ -5,7 +5,7 @@ summary: "Illustrations for a zine."
 tags: ["illustration", "print"]
 cover: "https://images.squarespace-cdn.com/content/v1/56713d760e4c110d4893a8ed/205c77ca-fe1d-424f-a23e-784e040629bb/image_you-are-here-title.jpg"
 marble:
-  show: true
+  show: false
   size: 0.95
   color: "#ffb3d9"
   light: "#ff66cc"
