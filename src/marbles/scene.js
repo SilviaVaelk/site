@@ -84,9 +84,11 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   // Largest size at which the (uppercase) name fits, wrapping onto lines
   function layoutTitle(W, H) {
     const words = title.text.toUpperCase().split(/\s+/).filter(Boolean);
-    const maxW = W * 0.94;
-    const maxH = H * 0.8;
-    let size = Math.min(H * 0.5, W * 0.3);
+    // titleSize 1 = as big as fits the screen; below 1 smaller, above 1 runs off the edges
+    const k = env.titleSize ?? 1;
+    const maxW = W * 0.94 * k;
+    const maxH = H * 0.8 * k;
+    let size = Math.min(H * 0.5, W * 0.3) * Math.max(k, 1);
     for (let i = 0; i < 50; i++) {
       bctx.font = TITLE_FONT(size);
       bctx.letterSpacing = `${-0.03 * size}px`;
@@ -127,7 +129,7 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
       title.layout ??= layoutTitle(W, H);
       const { size, lines } = title.layout;
       bctx.globalAlpha = title.alpha;
-      bctx.fillStyle = '#000';
+      bctx.fillStyle = env.titleColor ?? '#000000';
       bctx.font = TITLE_FONT(size);
       bctx.letterSpacing = `${-0.03 * size}px`;
       bctx.textAlign = 'center';
@@ -472,6 +474,7 @@ export function createMarbleScene({ canvas, items, assetBase, onHover = () => {}
   }
 
   function applyEnvironment() {
+    title.layout = null;
     applyEnvMap();
     scene.environmentIntensity = env.envIntensity;
     scene.environmentRotation.set(0, THREE.MathUtils.degToRad(env.envRotation), 0);

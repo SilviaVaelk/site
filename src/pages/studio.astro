@@ -169,6 +169,17 @@ const data = {
       updatePublish();
     });
 
+    // Big project name behind the marbles
+    const titleFolder = pane.addFolder({ title: 'Project name' });
+    titleFolder.addBinding(env, 'titleColor', { label: 'colour' });
+    titleFolder.addBinding(env, 'titleSize', { label: 'size', min: 0.2, max: 1.5, step: 0.01 });
+    titleFolder.on('change', () => {
+      scene.setEnvironment(env);
+      scene.setTitle(items.get(sel.project).title); // show it while adjusting
+      envDirty = true;
+      updatePublish();
+    });
+
     const physics = pane.addFolder({ title: 'View & physics', expanded: false });
     physics.addBinding(env, 'zoom', { label: 'zoom out', min: 1.5, max: 6, step: 0.05 });
     physics.addBinding(env, 'bounce', { label: 'marble bounce', min: 0, max: 1, step: 0.01 });
